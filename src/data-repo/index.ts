@@ -1,14 +1,15 @@
+import { Effect } from 'effect'
 import { User, Record, Store } from '../models/index.js'
 
 const users: Record<User> = {
-  '1': Object.freeze({
+  '1': {
     id: '1',
     name: 'Sebas',
-  }),
-  '3': Object.freeze({
+  },
+  '3': {
     id: '3',
     name: 'Diego',
-  }),
+  },
 }
 
 const stores: Record<Store> = {
@@ -35,8 +36,20 @@ const stores: Record<Store> = {
 }
 
 export const dataRepo = Object.freeze({
-  users: async (): Promise<unknown[]> => Object.values(users),
-  getUserById: async (id: string): Promise<unknown> => users[id],
-  stores: async (): Promise<unknown[]> => Object.values(stores),
-  getStoreById: async (id: string): Promise<unknown> => stores[id],
+  users: async (): Promise<Effect.Effect<User[], Error>> =>
+    users
+      ? Effect.succeed(Object.values(users))
+      : Effect.fail(new Error('users not found')),
+  getUserById: async (id: string): Promise<Effect.Effect<User, Error>> =>
+    users[id]
+      ? Effect.succeed(users[id])
+      : Effect.fail(new Error('user not found')),
+  stores: async (): Promise<Effect.Effect<Store[], Error>> =>
+    stores
+      ? Effect.succeed(Object.values(stores))
+      : Effect.fail(new Error('store not found')),
+  getStoreById: async (id: string): Promise<Effect.Effect<Store, Error>> =>
+    stores[id]
+      ? Effect.succeed(stores[id])
+      : Effect.fail(new Error('stores not found')),
 })
