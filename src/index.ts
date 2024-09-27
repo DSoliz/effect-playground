@@ -15,8 +15,7 @@ const retryPolicy = Schedule.exponential(2000).pipe(
   Schedule.compose(Schedule.recurs(15))
 )
 
-const fetchUserFailWithRetry = pipe(
-  fetchUserFail,
+const fetchUserFailWithRetry = fetchUserFail.pipe(
   Effect.tap(() => console.info('LOL')),
   Effect.retry(retryPolicy)
 )
