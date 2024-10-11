@@ -1,5 +1,11 @@
 import { Effect, pipe, Schedule } from 'effect'
 import { dataRepo } from './data-repo/index.js'
+import {
+  FetchHttpClient,
+  HttpClient,
+  HttpClientRequest,
+  HttpClientResponse,
+} from '@effect/platform'
 
 const fetchStores = Effect.tryPromise({
   try: () => dataRepo.stores(),
@@ -8,16 +14,23 @@ const fetchStores = Effect.tryPromise({
 const fetchUser = Effect.promise(() => dataRepo.getUserById('1'))
 const fetchUserFail = Effect.promise(async () => {
   Effect.sleep(2000)
-  return Effect.fail(new Error('ERROR'))
+  return Effect.fail(1)
 })
 
 const retryPolicy = Schedule.exponential(2000).pipe(
   Schedule.compose(Schedule.recurs(15))
 )
 
-const fetchUserFailWithRetry = fetchUserFail.pipe(
-  Effect.tap(() => console.info('LOL')),
-  Effect.retry(retryPolicy)
+const call = (id: number) =>
+  HttpClientRequest.get(`/todos`).pipe(
+    HttpClientRequest.appendUrlParams({ id: id })
+  )
+
+const fetchUserFailWithRetry = pipe(
+  fetchUserFail,
+  Effect.timeout('1 second'),
+  Effect.retry(retryPolicy),
+  Effect.tap(console.info)
 )
 Effect.runPromise(fetchUserFailWithRetry)
 
@@ -48,7 +61,8 @@ const program3 = Effect.gen(function* () {
   const storesVal = yield* stores
   const user = yield* fetchUser
   const userVal = yield* user
-  const fail = yield* fetchUserFail
+
+  // const fail = yield* fetchUserFail
   // Unwrapping this results in failure
   // const failVal = yield* fail
 
@@ -59,6 +73,7 @@ Effect.runPromise(program3)
 const program4 = Effect.gen(function* () {
   const stores = yield* Effect.flatten(fetchStores)
   const user = yield* Effect.flatten(fetchUser)
+
   // Unwrapping this results in failure
   // const fail = yield* Effect.flatten(fetchUserFail)
 
